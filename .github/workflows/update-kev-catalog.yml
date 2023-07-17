@@ -1,0 +1,52 @@
+name: Save JSON to kev-catalog Repository
+
+on:
+  schedule:
+    - cron: "0 */4 * * *"
+  push:
+    branches:
+    - main
+
+jobs:
+  update-kev-catalog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: kev-catalog-update
+
+      - name: Checkout kev-catalog
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository_owner }}/kev-catalog
+          token: ${{ secrets.KEV_CATALOG_TOKEN }}
+          path: kev-catalog
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+
+      - name: Build Go Application
+        working-directory: kev-catalog-update
+        run: |
+          go build -o update .
+          cp update ../kev-catalog/update
+
+      - name: Run Go Application and Generate JSON
+        working-directory: kev-catalog
+        run: |
+          ./update
+          rm update
+
+      - name: Commit and Push Changes
+        working-directory: kev-catalog
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git init
+            git config user.name "GitHub Action"
+            git config user.email "action@github.com"
+            git add .
+            git commit -m "Update JSON file"
+            git push
+          fi
