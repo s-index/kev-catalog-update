@@ -36,6 +36,7 @@ jobs:
       - name: Run Go Application and Generate JSON
         working-directory: kev-catalog
         run: |
+          rm kev/*
           ./update
           rm update
 
